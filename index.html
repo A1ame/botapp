@@ -824,11 +824,11 @@ function renderAOrders(elId, list) {
 
 async function renderAProds() {
   const el = document.getElementById('aProd');
-  // Reload fresh products with accountData (admin view)
   try {
     products = await api('GET', '/api/products');
   } catch(e) {}
   if (!products.length) { el.innerHTML = '<div class="empty">Нет товаров</div>'; return; }
+  
   el.innerHTML = products.map(p => {
     const sc = p.stock === 0 ? 'var(--err)' : p.stock <= 3 ? 'var(--warn)' : 'var(--ok)';
     const st = p.stock === 0 ? 'Нет' : p.stock <= 3 ? 'Мало' : 'ОК';
@@ -841,7 +841,10 @@ async function renderAProds() {
         <div style="font-family:'DM Mono';font-size:12px">×${p.stock}</div>
         <div style="font-size:10px;color:${sc};margin-top:2px">${st}</div>
       </div>
-      <button class="chip c-err" onclick="delProd('${p._id}')">✗</button>
+      <div class="achips" style="margin-left:10px">
+        <button class="chip c-ok" style="padding:4px 6px" onclick="openEdit('${p._id}')">✏️</button>
+        <button class="chip c-err" style="padding:4px 6px" onclick="delProd('${p._id}')">✗</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -881,6 +884,52 @@ async function delProd(id) {
     showToast(`Ошибка: ${e.message}`);
   }
 }
+
+
+
+function openEdit(id) {
+  const p = products.find(x => String(x._id) === String(id));
+  if (!p) return;
+  set('epId', p._id);
+  set('epNm', p.name);
+  set('epPr', p.price);
+  set('epSt', p.stock);
+  set('epDt', p.accountData || '');
+  document.getElementById('mEdit').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('mEdit').classList.remove('open');
+}
+
+async function saveProd() {
+  const id = v('epId');
+  const nm = v('epNm');
+  const pr = parseInt(v('epPr'));
+  const st = parseInt(v('epSt'));
+  const dt = v('epDt');
+  
+  if (!nm || isNaN(pr) || isNaN(st)) { showToast('Заполни основные поля корректно'); return; }
+
+  try {
+    showToast('Сохраняем...');
+    // Отправляем PATCH запрос на сервер (он у тебя уже написан в server.js!)
+    await api('PATCH', `/api/products/${id}`, {
+      name: nm, 
+      price: pr, 
+      stock: st, 
+      accountData: dt
+    });
+    
+    showToast('Сохранено!');
+    closeEdit();
+    renderAProds(); // Перезапрашиваем список товаров с сервера
+    renderProducts(); // Обновляем витрину для покупателей
+  } catch(e) {
+    showToast(`Ошибка: ${e.message}`);
+  }
+}
+
 
 async function addProduct() {
   const nm = v('npNm'), pr = parseInt(v('npPr')), st = parseInt(v('npSt')),
