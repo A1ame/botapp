@@ -404,6 +404,27 @@ button,input,select,textarea{font-family:'Syne',sans-serif}
   </div>
 </div>
 
+<div class="mover" id="mEdit">
+  <div class="modal">
+    <div class="mhnd"></div>
+    <div class="mtitle">Редактировать товар</div>
+    <div class="mbody">
+      <input type="hidden" id="epId">
+      <div class="fg"><label class="flbl">Название</label><input class="fi" id="epNm"></div>
+      <div class="f2">
+        <div class="fg"><label class="flbl">Цена (₽)</label><input class="fi" id="epPr" type="number"></div>
+        <div class="fg"><label class="flbl">Остаток (шт)</label><input class="fi" id="epSt" type="number"></div>
+      </div>
+      <div class="fg">
+        <label class="flbl">Данные аккаунта</label>
+        <textarea class="fta" id="epDt"></textarea>
+      </div>
+      <button class="btn-p" style="width:100%" onclick="saveProd()">Сохранить изменения</button>
+      <button class="btn-w" onclick="closeEdit()">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ╔═══════════════════════════════════════════════╗
 // ║  КОНФИГУРАЦИЯ                                ║
