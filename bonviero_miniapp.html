@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bonviero</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0a;--s1:#111;--s2:#1a1a1a;
+  --b1:#222;--b2:#333;
+  --t1:#f0f0f0;--t2:#888;--t3:#444;
+  --acc:#fff;--ok:#44ff88;--warn:#ffc832;--err:#ff4444;
+  --r:12px;--rs:8px
+}
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none}
+body{background:var(--bg);color:var(--t1);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+button,input,select,textarea{font-family:'Syne',sans-serif}
+
+/* CONFIG SCREEN */
+#cfg{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px 32px;overflow-y:auto}
+#cfg.gone{display:none}
+.cfg-logo{font-size:22px;font-weight:800;letter-spacing:.2em;margin-bottom:6px}
+.cfg-sub{font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:32px;text-align:center;letter-spacing:.08em}
+.cfg-card{width:100%;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:22px;margin-bottom:12px}
+.cfg-sec{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:18px;font-family:'DM Mono',monospace}
+.cfg-f{margin-bottom:14px}
+.cfg-lbl{font-size:11px;color:var(--t3);margin-bottom:5px;display:block;letter-spacing:.06em;text-transform:uppercase}
+.cfg-in{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .15s}
+.cfg-in:focus{border-color:var(--acc)}
+.cfg-in::placeholder{color:var(--t3)}
+.cfg-hint{font-size:11px;color:var(--t3);margin-top:4px;line-height:1.5;font-family:'DM Mono',monospace}
+.cfg-hint a{color:var(--t2)}
+.cfg-sep{height:1px;background:var(--b1);margin:16px 0}
+.cfg-btn{width:100%;padding:14px;background:var(--acc);color:var(--bg);border:none;border-radius:var(--r);font-size:14px;font-weight:800;letter-spacing:.05em;cursor:pointer}
+.cfg-btn:active{opacity:.85}
+.cfg-skip{width:100%;padding:11px;background:transparent;color:var(--t3);border:none;font-size:13px;cursor:pointer;margin-top:8px}
+.cfg-info{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:16px;font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);line-height:1.8;margin-top:4px}
+.cfg-info b{color:var(--t2)}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;padding:13px 18px}
+.nav-logo{font-size:17px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+.nav-r{display:flex;align-items:center;gap:10px}
+.cart-btn{width:36px;height:36px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--rs);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:15px}
+.cc{position:absolute;top:-5px;right:-5px;background:var(--acc);color:var(--bg);font-size:9px;font-weight:700;width:15px;height:15px;border-radius:50%;display:none;align-items:center;justify-content:center}
+.admin-btn{padding:7px 12px;background:var(--acc);color:var(--bg);border:none;border-radius:var(--rs);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;display:none;cursor:pointer}
+.uav{width:32px;height:32px;background:var(--s2);border:1px solid var(--b2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2);overflow:hidden}
+.uav img{width:100%;height:100%;object-fit:cover}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--b1);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bi{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 0;gap:3px;cursor:pointer;color:var(--t3);font-size:9px;font-weight:500;letter-spacing:.05em;transition:color .15s}
+.bi.active{color:var(--t1)}
+.bi-ic{font-size:17px;line-height:1}
+
+/* CONTENT */
+.content{padding-top:64px;padding-bottom:68px;min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+
+/* CATALOG */
+.hero{padding:24px 18px 18px;border-bottom:1px solid var(--b1)}
+.hero-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.hero-h{font-size:24px;font-weight:800;line-height:1.1;letter-spacing:-.02em}
+.hero-h span{color:var(--t2)}
+.cats{display:flex;gap:7px;padding:12px 18px;overflow-x:auto;border-bottom:1px solid var(--b1)}
+.pill{padding:6px 14px;border:1px solid var(--b2);border-radius:100px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;color:var(--t2);background:transparent;transition:all .15s}
+.pill.active{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b1);border-top:1px solid var(--b1)}
+.pcard{background:var(--bg);padding:16px 13px;cursor:pointer;transition:background .12s}
+.pcard:active{background:var(--s1)}
+.pbadge{display:inline-block;padding:2px 7px;background:var(--s2);border:1px solid var(--b2);border-radius:4px;font-family:'DM Mono',monospace;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+.pbadge.hot{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:var(--t1)}
+.pname{font-size:13px;font-weight:700;line-height:1.2;margin-bottom:4px}
+.pdesc{font-size:11px;color:var(--t2);line-height:1.4;margin-bottom:11px}
+.pfooter{display:flex;align-items:center;justify-content:space-between}
+.pprice{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.pprice .cur{font-size:10px;color:var(--t2)}
+.padd{width:26px;height:26px;background:var(--s2);border:1px solid var(--b2);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--t2)}
+.pcard:active .padd{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.pstock{font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;margin-top:5px}
+.pstock.low{color:#ff8844}.pstock.out{color:var(--err)}
+
+/* DETAIL */
+.dhead{padding:18px 18px 0;display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.back{width:34px;height:34px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--rs);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0}
+.dtag{font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.dbody{padding:0 18px 24px}
+.dname{font-size:22px;font-weight:800;line-height:1.1;letter-spacing:-.02em;margin-bottom:9px}
+.dprrow{display:flex;align-items:baseline;gap:7px;margin-bottom:16px}
+.dprice{font-family:'DM Mono',monospace;font-size:28px;font-weight:500}
+.dpcur{font-size:14px;color:var(--t2)}
+.ddesc{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:18px;border-top:1px solid var(--b1);padding-top:16px}
+.dfeat{margin-bottom:20px}
+.frow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--b1);font-size:13px}
+.fk{color:var(--t2)}.fv{font-weight:600;font-family:'DM Mono',monospace;font-size:12px}
+.qty-row{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.qty-lbl{font-size:13px;color:var(--t2)}
+.qty-ctrl{display:flex;align-items:center;border:1px solid var(--b2);border-radius:var(--rs);overflow:hidden}
+.qty-btn{width:32px;height:32px;background:var(--s1);border:none;color:var(--t1);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qty-n{width:34px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;background:var(--bg);border-left:1px solid var(--b2);border-right:1px solid var(--b2);padding:6px 0}
+.arow{display:flex;gap:9px}
+.btn-p{flex:1;padding:14px;background:var(--acc);color:var(--bg);border:none;border-radius:var(--r);font-size:13px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:opacity .12s}
+.btn-p:active{opacity:.85}
+.btn-s{padding:14px 18px;background:transparent;color:var(--t1);border:1px solid var(--b2);border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s}
+.btn-s:active{background:var(--s1)}
+.btn-w{width:100%;padding:14px;background:transparent;color:var(--t1);border:1px solid var(--b2);border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s;margin-top:9px}
+.btn-w:active{background:var(--s1)}
+
+/* CART */
+.cempty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 30px;text-align:center;gap:10px}
+.ce-ic{font-size:44px;opacity:.12}
+.ce-t{color:var(--t2);font-size:14px;line-height:1.5}
+.citem{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--b1)}
+.ci-inf{flex:1}.ci-nm{font-size:13px;font-weight:600;margin-bottom:3px}.ci-mt{font-size:11px;color:var(--t2);font-family:'DM Mono',monospace}
+.ci-pr{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;text-align:right}
+.ci-del{width:26px;height:26px;background:var(--s1);border:1px solid var(--b2);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--t3);flex-shrink:0}
+.csum{padding:18px}
+.ctrow{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.ctl{font-size:13px;color:var(--t2)}.ctv{font-family:'DM Mono',monospace;font-size:21px;font-weight:500}
+.cnote{font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.5}
+.popts{display:flex;flex-direction:column;gap:9px}
+.pbtn{width:100%;padding:14px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:opacity .12s;letter-spacing:.03em}
+.pbtn:active{opacity:.85}
+.ptg{background:var(--acc);color:var(--bg);border:none}
+.pman{background:transparent;color:var(--t1);border:1px solid var(--b2)}
+
+/* ORDERS */
+.ocard{padding:15px 18px;border-bottom:1px solid var(--b1)}
+.ohead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.oid{font-family:'DM Mono',monospace;font-size:11px;color:var(--t3)}
+.ost{padding:3px 9px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.s-paid{background:rgba(68,255,136,.1);color:var(--ok);border:1px solid rgba(68,255,136,.2)}
+.s-pending{background:rgba(255,200,50,.1);color:var(--warn);border:1px solid rgba(255,200,50,.2)}
+.s-cancelled{background:rgba(255,68,68,.1);color:var(--err);border:1px solid rgba(255,68,68,.2)}
+.oprod{font-size:12px;color:var(--t2);margin-bottom:7px;line-height:1.4}
+.ofooter{display:flex;justify-content:space-between;align-items:center}
+.odt{font-size:11px;color:var(--t3);font-family:'DM Mono',monospace}
+.otot{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.acc-box{margin-top:11px;padding:13px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r)}
+.acc-hdr{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:'DM Mono',monospace}
+.acc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b1);font-size:12px}
+.acc-row:last-of-type{border-bottom:none}
+.acc-k{color:var(--t3)}.acc-v{font-family:'DM Mono',monospace;color:var(--ok);word-break:break-all;text-align:right;max-width:65%}
+.copy-btn{width:100%;margin-top:9px;padding:8px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);font-size:11px;color:var(--t2);cursor:pointer;font-weight:600;transition:background .12s}
+.copy-btn:active{background:var(--b2)}
+
+/* PROFILE */
+.phead{padding:26px 18px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:14px}
+.pav{width:56px;height:56px;background:var(--s2);border:1px solid var(--b2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;overflow:hidden}
+.pav img{width:100%;height:100%;object-fit:cover}
+.pnm{font-size:18px;font-weight:700;margin-bottom:3px}.pid{font-family:'DM Mono',monospace;font-size:11px;color:var(--t3)}
+.pstats{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--b1)}
+.sbox{padding:16px;text-align:center;border-right:1px solid var(--b1)}
+.sbox:last-child{border-right:none}
+.snum{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;margin-bottom:3px}
+.slbl{font-size:10px;color:var(--t3)}
+.pmenu{padding:6px 0}
+.mitem{display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;border-bottom:1px solid var(--b1);font-size:13px;font-weight:500;transition:background .1s}
+.mitem:active{background:var(--s1)}
+.mic{font-size:16px;width:22px;text-align:center}.mar{margin-left:auto;color:var(--t3);font-size:15px}
+
+/* ADMIN */
+.ahead{padding:16px 18px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:11px}
+.abadge{padding:4px 11px;background:var(--acc);color:var(--bg);border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.atitle{font-size:16px;font-weight:700}
+.atabs{display:flex;border-bottom:1px solid var(--b1);overflow-x:auto}
+.atab{padding:11px 16px;font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s}
+.atab.active{color:var(--t1);border-bottom-color:var(--acc)}
+.abody{padding:18px}
+.astats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:22px}
+.asc{padding:14px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r)}
+.asc-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;font-family:'DM Mono',monospace}
+.asc-n{font-family:'DM Mono',monospace;font-size:22px;font-weight:500}
+.asc-s{font-size:10px;color:var(--t3);margin-top:3px}
+.stitle{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:10px;font-family:'DM Mono',monospace}
+.arow2{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--b1);font-size:12px}
+.ai-inf{flex:1;min-width:0}
+.ai-usr{font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-itm{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-pr{font-family:'DM Mono',monospace;font-weight:500;font-size:12px;white-space:nowrap}
+.achips{display:flex;gap:5px;flex-shrink:0}
+.chip{padding:4px 9px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid;transition:opacity .1s}
+.chip:active{opacity:.7}
+.c-ok{background:rgba(68,255,136,.1);color:var(--ok);border-color:rgba(68,255,136,.3)}
+.c-err{background:rgba(255,68,68,.1);color:var(--err);border-color:rgba(255,68,68,.3)}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.flbl{font-size:10px;color:var(--t2);margin-bottom:5px;display:block;letter-spacing:.05em;text-transform:uppercase}
+.fi,.fs,.fta{width:100%;padding:11px 13px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-size:13px;outline:none;transition:border-color .15s}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--acc)}
+.fi::placeholder,.fta::placeholder{color:var(--t3)}
+.fta{resize:vertical;min-height:72px}
+.fs{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* NOTIFY BAR */
+.nbar{padding:8px 18px;background:var(--s1);border-bottom:1px solid var(--b1);font-size:10px;font-family:'DM Mono',monospace;display:none;align-items:center;gap:7px}
+.ndot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.ndot.ok{background:var(--ok)}.ndot.err{background:var(--err)}
+
+/* MODAL */
+.mover{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:none;align-items:flex-end}
+.mover.open{display:flex}
+.modal{width:100%;background:var(--s1);border-top:1px solid var(--b2);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:90vh;overflow-y:auto;animation:su .25s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mhnd{width:36px;height:4px;background:var(--b2);border-radius:2px;margin:11px auto 0}
+.mtitle{font-size:17px;font-weight:700;padding:16px 18px 13px;border-bottom:1px solid var(--b1)}
+.mbody{padding:18px}
+
+/* TOAST */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--acc);color:var(--bg);padding:9px 18px;border-radius:100px;font-size:12px;font-weight:600;z-index:999;opacity:0;transition:all .2s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* MISC */
+.shead{padding:16px 18px 9px;display:flex;align-items:center;justify-content:space-between}
+.shead-t{font-size:15px;font-weight:700}.shead-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--t3)}
+.empty{padding:50px 18px;text-align:center;color:var(--t2);font-size:13px}
+.e-ic{font-size:36px;margin-bottom:10px;opacity:.12}
+.info-box{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:14px;font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);line-height:1.8;margin-top:14px}
+.info-box b{color:var(--t2)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     ЭКРАН НАСТРОЙКИ
+═══════════════════════════════════════ -->
+<div id="cfg">
+  <div class="cfg-logo">BONVIERO</div>
+  <div class="cfg-sub">// первоначальная настройка</div>
+
+  <div class="cfg-card">
+    <div class="cfg-sec">Данные бота</div>
+
+    <div class="cfg-f">
+      <label class="cfg-lbl">Bot Token</label>
+      <input class="cfg-in" id="cfgToken" placeholder="8543218764:AAGxEqgGH7ev24drX0RWHURt8h463nF7UoU">
+      <div class="cfg-hint">Получи у <a href="https://t.me/BotFather" target="_blank">@BotFather</a> → /mybots → твой бот → API Token</div>
+    </div>
+
+    <div class="cfg-f">
+      <label class="cfg-lbl">Юзернейм бота (без @)</label>
+      <input class="cfg-in" id="cfgBotName" placeholder="BonvieroBot">
+    </div>
+
+    <div class="cfg-sep"></div>
+    <div class="cfg-sec">Твой аккаунт</div>
+
+    <div class="cfg-f">
+      <label class="cfg-lbl">Твой Telegram ID (для Админ-панели)</label>
+      <input class="cfg-in" id="cfgAdminId" placeholder="386754219" type="number">
+      <div class="cfg-hint">Напиши <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a> — он пришлёт твой числовой ID</div>
+    </div>
+
+    <div class="cfg-sep"></div>
+    <div class="cfg-sec">Чат для уведомлений о заказах</div>
+
+    <div class="cfg-f">
+      <label class="cfg-lbl">ID группового чата (ты + бот)</label>
+      <input class="cfg-in" id="cfgChatId" placeholder="-5151341588">
+      <div class="cfg-hint">Групповые ID начинаются с <b style="color:var(--t2)">-100</b></div>
+    </div>
+
+    <div class="info-box">
+      <b>Как получить ID чата:</b><br>
+      1. Создай группу в Telegram<br>
+      2. Добавь своего бота в группу<br>
+      3. Напиши в группу /start<br>
+      4. Открой: t.me/getidsbot — добавь его в группу<br>
+      5. Он напишет ID вида <b>-1009876543210</b><br><br>
+      <b>Или:</b> оставь пустым — уведомления пойдут<br>тебе в ЛС (по Telegram ID выше)
+    </div>
+
+    <div style="height:18px"></div>
+    <button class="cfg-btn" onclick="saveConfig()">Сохранить и открыть магазин</button>
+    <button class="cfg-skip" onclick="skipConfig()">Пропустить (без уведомлений)</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ОСНОВНОЕ ПРИЛОЖЕНИЕ
+═══════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-logo">Bonviero</div>
+  <div class="nav-r">
+    <div class="cart-btn" onclick="goPage('cart')">🛒<span class="cc" id="cc">0</span></div>
+    <button class="admin-btn" id="adminBtn" onclick="goPage('admin')">ADMIN</button>
+    <div class="uav" id="uav">—</div>
+  </div>
+</nav>
+
+<div class="bnav">
+  <div class="bi active" id="bnav-catalog" onclick="goPage('catalog')"><span class="bi-ic">◼</span>Каталог</div>
+  <div class="bi" id="bnav-cart" onclick="goPage('cart')"><span class="bi-ic">⊞</span>Корзина</div>
+  <div class="bi" id="bnav-orders" onclick="goPage('orders')"><span class="bi-ic">≡</span>Заказы</div>
+  <div class="bi" id="bnav-profile" onclick="goPage('profile')"><span class="bi-ic">◯</span>Профиль</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="content">
+
+  <!-- КАТАЛОГ -->
+  <div class="page active" id="page-catalog">
+    <div class="nbar" id="nbar"><span class="ndot" id="ndot"></span><span id="ntxt">—</span></div>
+    <div class="hero">
+      <div class="hero-tag">// marketplace</div>
+      <h1 class="hero-h">Лучшие аккаунты<br><span>и сервисы</span></h1>
+    </div>
+    <div class="cats">
+      <div class="pill active" onclick="filterCat('all',this)">Все</div>
+      <div class="pill" onclick="filterCat('social',this)">Соцсети</div>
+      <div class="pill" onclick="filterCat('streaming',this)">Стриминг</div>
+      <div class="pill" onclick="filterCat('gaming',this)">Игры</div>
+      <div class="pill" onclick="filterCat('other',this)">Прочее</div>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+
+  <!-- ДЕТАЛЬНАЯ СТРАНИЦА ТОВАРА -->
+  <div class="page" id="page-detail">
+    <div class="dhead">
+      <div class="back" onclick="goPage('catalog')">←</div>
+      <span class="dtag" id="dtag">—</span>
+    </div>
+    <div class="dbody">
+      <h2 class="dname" id="dname">—</h2>
+      <div class="dprrow"><span class="dprice" id="dprice">0</span><span class="dpcur">₽</span></div>
+      <div class="ddesc" id="ddesc">—</div>
+      <div class="dfeat" id="dfeat"></div>
+      <div class="qty-row">
+        <span class="qty-lbl">Количество</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-n" id="qn">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <div class="arow">
+        <button class="btn-p" onclick="addToCartDetail()">В корзину</button>
+        <button class="btn-s" onclick="buyNow()">Купить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- КОРЗИНА -->
+  <div class="page" id="page-cart">
+    <div class="shead"><span class="shead-t">Корзина</span><span class="shead-tag" id="cic">0 позиций</span></div>
+    <div id="cartContent"></div>
+  </div>
+
+  <!-- ЗАКАЗЫ -->
+  <div class="page" id="page-orders">
+    <div class="shead"><span class="shead-t">Мои заказы</span></div>
+    <div id="ordersContent"></div>
+  </div>
+
+  <!-- ПРОФИЛЬ -->
+  <div class="page" id="page-profile">
+    <div class="phead">
+      <div class="pav" id="pav">?</div>
+      <div><div class="pnm" id="pnm">—</div><div class="pid" id="pid_el">ID: —</div></div>
+    </div>
+    <div class="pstats">
+      <div class="sbox"><div class="snum" id="st1">0</div><div class="slbl">Заказов</div></div>
+      <div class="sbox"><div class="snum" id="st2">₽0</div><div class="slbl">Потрачено</div></div>
+      <div class="sbox"><div class="snum" id="st3">0</div><div class="slbl">Активных</div></div>
+    </div>
+    <div class="pmenu">
+      <div class="mitem" onclick="goPage('orders')"><span class="mic">📦</span>Мои заказы<span class="mar">›</span></div>
+      <div class="mitem" onclick="contactSupport()"><span class="mic">💬</span>Поддержка<span class="mar">›</span></div>
+      <div class="mitem" onclick="goPage('catalog')"><span class="mic">◼</span>Каталог<span class="mar">›</span></div>
+      <div class="mitem" onclick="openSettingsModal()"><span class="mic">⚙</span>Настройки бота<span class="mar">›</span></div>
+    </div>
+  </div>
+
+  <!-- АДМИН ПАНЕЛЬ -->
+  <div class="page" id="page-admin">
+    <div class="ahead"><div class="abadge">ADMIN</div><div class="atitle">Панель управления</div></div>
+    <div class="atabs">
+      <div class="atab active" onclick="aTab('ov',this)">Обзор</div>
+      <div class="atab" onclick="aTab('or',this)">Заказы</div>
+      <div class="atab" onclick="aTab('pr',this)">Товары</div>
+      <div class="atab" onclick="aTab('add',this)">+ Добавить</div>
+      <div class="atab" onclick="aTab('cfg',this)">⚙ Настройки</div>
+    </div>
+    <div class="abody">
+
+      <div id="t-ov">
+        <div class="astats">
+          <div class="asc"><div class="asc-l">Всего заказов</div><div class="asc-n" id="as1">0</div><div class="asc-s">за всё время</div></div>
+          <div class="asc"><div class="asc-l">Выручка</div><div class="asc-n" id="as2">₽0</div><div class="asc-s">оплаченные</div></div>
+          <div class="asc"><div class="asc-l">Товаров</div><div class="asc-n" id="as3">0</div><div class="asc-s">в каталоге</div></div>
+          <div class="asc"><div class="asc-l">Покупателей</div><div class="asc-n" id="as4">0</div><div class="asc-s">уникальных</div></div>
+        </div>
+        <div class="stitle">Последние заказы</div>
+        <div id="aRec"></div>
+      </div>
+
+      <div id="t-or" style="display:none">
+        <div class="stitle">Все заказы</div>
+        <div id="aAll"></div>
+      </div>
+
+      <div id="t-pr" style="display:none">
+        <div class="stitle">Товары в каталоге</div>
+        <div id="aProd"></div>
+      </div>
+
+      <div id="t-add" style="display:none">
+        <div class="stitle">Новый товар</div>
+        <div class="fg"><label class="flbl">Название</label><input class="fi" id="npNm" placeholder="Instagram Premium"></div>
+        <div class="f2">
+          <div class="fg"><label class="flbl">Цена (₽)</label><input class="fi" id="npPr" type="number" placeholder="490"></div>
+          <div class="fg"><label class="flbl">Остаток (шт)</label><input class="fi" id="npSt" type="number" placeholder="10"></div>
+        </div>
+        <div class="fg"><label class="flbl">Категория</label>
+          <select class="fs" id="npCat">
+            <option value="social">Соцсети</option>
+            <option value="streaming">Стриминг</option>
+            <option value="gaming">Игры</option>
+            <option value="other">Прочее</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Описание</label><textarea class="fta" id="npDs" placeholder="Описание товара..."></textarea></div>
+        <div class="fg">
+          <label class="flbl">Данные аккаунта</label>
+          <textarea class="fta" id="npDt" placeholder="login: user123&#10;password: pass456&#10;email: user@mail.ru"></textarea>
+          <div style="font-size:10px;color:var(--t3);margin-top:4px;font-family:'DM Mono',monospace">Эти данные получит покупатель после оплаты</div>
+        </div>
+        <div class="fg"><label class="flbl">Метка</label>
+          <select class="fs" id="npHt"><option value="0">Обычный</option><option value="1">★ Хит продаж</option></select>
+        </div>
+        <button class="btn-p" style="width:100%" onclick="addProduct()">Добавить товар</button>
+      </div>
+
+      <div id="t-cfg" style="display:none">
+        <div class="stitle">Настройки уведомлений</div>
+
+        <div class="fg"><label class="flbl">Bot Token</label><input class="fi" id="aCfgTk" placeholder="1234567890:ABCdef..."></div>
+        <div class="fg"><label class="flbl">Твой Telegram ID (Admin)</label><input class="fi" id="aCfgAd" placeholder="386754219" type="number"></div>
+        <div class="fg"><label class="flbl">ID группового чата</label><input class="fi" id="aCfgCh" placeholder="-1001234567890"></div>
+        <div class="fg"><label class="flbl">Юзернейм бота (без @)</label><input class="fi" id="aCfgBn" placeholder="BonvieroBot"></div>
+
+        <button class="btn-p" style="width:100%;margin-bottom:9px" onclick="saveFromAdmin()">Сохранить настройки</button>
+        <button class="btn-w" onclick="testNotify()">Тест уведомления</button>
+
+        <div class="info-box" style="margin-top:16px">
+          <b>Где взять каждый параметр:</b><br><br>
+          <b>Bot Token</b> — @BotFather → /mybots → твой бот → API Token<br><br>
+          <b>Telegram ID</b> — напиши @userinfobot<br><br>
+          <b>ID чата</b> — создай группу, добавь бота, напиши /start, добавь @getidsbot — он покажет ID начинающийся с -100<br><br>
+          <b>Если чат не указан</b> — уведомления придут тебе в ЛС
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- MODAL: ОПЛАТА -->
+<div class="mover" id="mPay">
+  <div class="modal">
+    <div class="mhnd"></div>
+    <div class="mtitle">Оформить заказ</div>
+    <div class="mbody">
+      <div id="paySum"></div>
+      <div style="margin:16px 0 13px;border-top:1px solid var(--b1);padding-top:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:14px;font-size:13px">
+          <span style="color:var(--t2)">Итого</span>
+          <span style="font-family:'DM Mono';font-size:19px;font-weight:500" id="payTot">₽0</span>
+        </div>
+        <div class="popts">
+          <button class="pbtn ptg" onclick="payTelegram()">✈ Оплатить через Telegram</button>
+          <button class="pbtn pman" onclick="payManual()">✉ Написать в личку</button>
+        </div>
+        <p style="font-size:10px;color:var(--t3);text-align:center;margin-top:11px;line-height:1.5">
+          После оплаты данные аккаунта автоматически<br>отправятся тебе в Telegram
+        </p>
+      </div>
+      <button class="btn-w" onclick="closePay()">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: НАСТРОЙКИ (из профиля) -->
+<div class="mover" id="mSettings">
+  <div class="modal">
+    <div class="mhnd"></div>
+    <div class="mtitle">Настройки бота</div>
+    <div class="mbody">
+      <div class="fg"><label class="flbl">Bot Token</label><input class="fi" id="smTk" placeholder="1234567890:ABCdef..."></div>
+      <div class="fg"><label class="flbl">ID группового чата</label><input class="fi" id="smCh" placeholder="-1001234567890"></div>
+      <div class="fg"><label class="flbl">Юзернейм бота</label><input class="fi" id="smBn" placeholder="BonvieroBot"></div>
+      <button class="btn-p" style="width:100%;margin-bottom:9px" onclick="saveFromModal()">Сохранить</button>
+      <button class="btn-w" onclick="document.getElementById('mSettings').classList.remove('open')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔═══════════════════════════════════════════════╗
+// ║  КОНФИГУРАЦИЯ — заполняется через UI         ║
+// ╚═══════════════════════════════════════════════╝
+let C = {
+  token:   '',   // ← Bot Token от @BotFather
+  adminId: 0,    // ← Твой Telegram ID (число)
+  chatId:  '',   // ← ID группового чата (строка -100...)
+  botName: '',   // ← Юзернейм бота без @
+};
+
+// ╔═══════════════════════════════════════════════╗
+// ║  СОСТОЯНИЕ                                   ║
+// ╚═══════════════════════════════════════════════╝
+let tgUser = null, isAdmin = false;
+let cart = [], orders = [];
+let curProd = null, curQty = 1, activeCat = 'all';
+
+// ╔═══════════════════════════════════════════════╗
+// ║  ТОВАРЫ (пример — редактируй в Админке)      ║
+// ╚═══════════════════════════════════════════════╝
+let products = [
+  {id:1,name:'Instagram Premium',category:'social',price:490,stock:8,
+   desc:'Аккаунт Instagram с активной историей. Возраст 2+ года, заполненный профиль, без привязки к номеру.',
+   features:[{k:'Возраст',v:'2+ года'},{k:'Страна',v:'RU'},{k:'Подписчики',v:'100–500'},{k:'Формат',v:'Логин + пароль'}],
+   badge:'social',hot:false,
+   accountData:'login: bonv_insta1\npassword: Insta@2024\nemail: insta1@mail.ru'},
+  {id:2,name:'Spotify Premium 3М',category:'streaming',price:299,stock:15,
+   desc:'Подписка Spotify Premium на 3 месяца. Без рекламы, оффлайн режим, высокое качество.',
+   features:[{k:'Срок',v:'3 месяца'},{k:'Устройств',v:'До 5'},{k:'Качество',v:'Very High'},{k:'Формат',v:'Email + пароль'}],
+   badge:'streaming',hot:true,
+   accountData:'email: spotif@mail.ru\npassword: Spt@2024'},
+  {id:3,name:'Netflix Standard',category:'streaming',price:599,stock:5,
+   desc:'Аккаунт Netflix Standard на 1 месяц. 2 экрана, Full HD.',
+   features:[{k:'Тариф',v:'Standard'},{k:'Экранов',v:'2'},{k:'Качество',v:'Full HD'},{k:'Срок',v:'1 месяц'}],
+   badge:'streaming',hot:false,
+   accountData:'email: nflx@example.com\npassword: Nflx@2024'},
+  {id:4,name:'Steam + Игры',category:'gaming',price:890,stock:3,
+   desc:'Аккаунт Steam с набором AAA игр. Уровень 10+.',
+   features:[{k:'Уровень',v:'10+'},{k:'Игр',v:'20–50'},{k:'Регион',v:'RU/CIS'},{k:'Guard',v:'Отключён'}],
+   badge:'gaming',hot:true,
+   accountData:'login: steam_bonv1\npassword: Stm@2024'},
+  {id:5,name:'TikTok Раскрученный',category:'social',price:1200,stock:2,
+   desc:'Аккаунт TikTok с реальными подписчиками. 1000–5000 подписчиков.',
+   features:[{k:'Подписчики',v:'1000–5000'},{k:'Просмотры',v:'50K+'},{k:'Страна',v:'RU'},{k:'Возраст',v:'1+ год'}],
+   badge:'social',hot:false,
+   accountData:'phone: +79001234567\npassword: Tkt@2024'},
+  {id:6,name:'YouTube Premium',category:'streaming',price:199,stock:20,
+   desc:'Подписка YouTube Premium на 1 месяц. Без рекламы, фоновое воспроизведение.',
+   features:[{k:'Срок',v:'1 месяц'},{k:'Устройств',v:'Без лимита'},{k:'Реклама',v:'Отсутствует'},{k:'Формат',v:'Email + пароль'}],
+   badge:'streaming',hot:false,
+   accountData:'email: ytprem@mail.ru\npassword: Yt@2024'},
+];
+
+// ╔═══════════════════════════════════════════════╗
+// ║  ИНИЦИАЛИЗАЦИЯ                               ║
+// ╚═══════════════════════════════════════════════╝
+window.addEventListener('DOMContentLoaded', () => {
+  loadCfg();
+  loadOrders();
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); tgUser = tg.initDataUnsafe?.user; }
+  if (!tgUser) tgUser = {id:0,first_name:'Гость',username:'guest',photo_url:null};
+  if (C.token && C.adminId) { document.getElementById('cfg').classList.add('gone'); boot(); }
+  // иначе показываем экран настройки
+});
+
+function boot() {
+  isAdmin = tgUser.id === C.adminId;
+  if (isAdmin) document.getElementById('adminBtn').style.display = 'block';
+  // Аватар шапки
+  const av = document.getElementById('uav');
+  if (tgUser.photo_url) av.innerHTML = `<img src="${tgUser.photo_url}">`;
+  else av.textContent = (tgUser.first_name||'G')[0].toUpperCase();
+  // Профиль
+  document.getElementById('pnm').textContent = [tgUser.first_name,tgUser.last_name].filter(Boolean).join(' ')||'Пользователь';
+  document.getElementById('pid_el').textContent = `ID: ${tgUser.id}`;
+  const pa = document.getElementById('pav');
+  if (tgUser.photo_url) pa.innerHTML = `<img src="${tgUser.photo_url}">`;
+  else pa.textContent = (tgUser.first_name||'G')[0].toUpperCase();
+  renderProducts();
+  updateCart();
+  updateNotifyBar();
+  updateProfileStats();
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  КОНФИГ                                      ║
+// ╚═══════════════════════════════════════════════╝
+function loadCfg() {
+  try { const s = localStorage.getItem('bonv_cfg'); if(s) C = {...C,...JSON.parse(s)}; } catch(e){}
+}
+function saveCfg() {
+  try { localStorage.setItem('bonv_cfg', JSON.stringify(C)); } catch(e){}
+}
+function saveConfig() {
+  const t = v('cfgToken'), a = parseInt(v('cfgAdminId')), ch = v('cfgChatId'), bn = v('cfgBotName');
+  if (!t) { alert('Введи Bot Token'); return; }
+  if (!a) { alert('Введи свой Telegram ID'); return; }
+  C = {token:t, adminId:a, chatId:ch, botName:bn};
+  saveCfg();
+  document.getElementById('cfg').classList.add('gone');
+  boot();
+  showToast('Настройки сохранены ✓');
+}
+function skipConfig() {
+  C = {token:'',adminId:0,chatId:'',botName:'BonvieroBot'};
+  document.getElementById('cfg').classList.add('gone');
+  boot();
+}
+function saveFromAdmin() {
+  C.token   = v('aCfgTk');
+  C.adminId = parseInt(v('aCfgAd')) || C.adminId;
+  C.chatId  = v('aCfgCh');
+  C.botName = v('aCfgBn');
+  saveCfg(); updateNotifyBar(); showToast('Сохранено ✓');
+}
+function saveFromModal() {
+  C.token   = v('smTk');
+  C.chatId  = v('smCh');
+  C.botName = v('smBn');
+  saveCfg(); updateNotifyBar();
+  document.getElementById('mSettings').classList.remove('open');
+  showToast('Сохранено ✓');
+}
+function openSettingsModal() {
+  set('smTk', C.token); set('smCh', C.chatId); set('smBn', C.botName);
+  document.getElementById('mSettings').classList.add('open');
+}
+function fillAdminCfg() {
+  set('aCfgTk', C.token); set('aCfgAd', C.adminId||''); set('aCfgCh', C.chatId); set('aCfgBn', C.botName);
+}
+function updateNotifyBar() {
+  const bar = document.getElementById('nbar'), dot = document.getElementById('ndot'), txt = document.getElementById('ntxt');
+  if (!isAdmin) { bar.style.display='none'; return; }
+  bar.style.display = 'flex';
+  if (C.token && C.chatId) { dot.className='ndot ok'; txt.textContent=`Уведомления → чат ${C.chatId}`; }
+  else if (C.token && C.adminId) { dot.className='ndot ok'; txt.textContent='Уведомления → твоё ЛС'; }
+  else { dot.className='ndot err'; txt.textContent='Уведомления не настроены'; }
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  TELEGRAM BOT API                            ║
+// ╚═══════════════════════════════════════════════╝
+async function tgSend(chatId, text) {
+  if (!C.token || !chatId) return false;
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${C.token}/sendMessage`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id: String(chatId), text, parse_mode:'HTML'})
+    });
+    const d = await r.json();
+    return d.ok;
+  } catch(e) { console.error(e); return false; }
+}
+
+async function notifyNewOrder(order) {
+  if (!C.token) return;
+  const items = order.items.map(x=>`  • ${x.name} × ${x.qty} — ₽${x.price*x.qty}`).join('\n');
+  const uLink = tgUser?.username ? `@${tgUser.username}` : `ID: ${order.userId}`;
+  const stEmoji = {paid:'✅',pending:'⏳',cancelled:'❌'}[order.status]||'📦';
+  const stText  = {paid:'Оплачен',pending:'Ожидает оплаты',cancelled:'Отменён'}[order.status]||order.status;
+  const msg =
+`${stEmoji} <b>Новый заказ #${order.id}</b>
+
+👤 <b>${order.userName||'Пользователь'}</b> (${uLink})
+
+📦 <b>Товары:</b>
+${items}
+
+💰 <b>Итого: ₽${order.total}</b>
+💳 <b>Статус:</b> ${stText}
+🕐 <b>Время:</b> ${order.date}`;
+
+  if (C.chatId) await tgSend(C.chatId, msg);
+  if (C.adminId) await tgSend(C.adminId, msg);
+}
+
+async function notifyConfirmed(order) {
+  if (!C.token) return;
+  const items = order.items.map(x=>`  • ${x.name} × ${x.qty}`).join('\n');
+  const accText = order.accountData
+    ? '\n\n🔑 <b>Данные аккаунта выданы покупателю</b>'
+    : '';
+  const msg =
+`✅ <b>Заказ подтверждён #${order.id}</b>
+
+📦 <b>Товары:</b>
+${items}
+
+💰 <b>Сумма: ₽${order.total}</b>${accText}`;
+  if (C.chatId) await tgSend(C.chatId, msg);
+  if (C.adminId) await tgSend(C.adminId, msg);
+}
+
+async function notifyCancelled(order) {
+  if (!C.token) return;
+  const msg = `❌ <b>Заказ #${order.id} отменён</b>\n\n📦 ${order.items.map(x=>x.name).join(', ')}\n💰 ₽${order.total}`;
+  if (C.chatId) await tgSend(C.chatId, msg);
+  if (C.adminId) await tgSend(C.adminId, msg);
+}
+
+async function testNotify() {
+  if (!C.token) { showToast('Нет токена — сначала настрой'); return; }
+  const dest = C.chatId || C.adminId;
+  if (!dest) { showToast('Укажи ID чата или Telegram ID'); return; }
+  showToast('Отправляю тест...');
+  const ok = await tgSend(dest, '🤖 <b>Bonviero</b> — тест уведомлений\n\nЕсли видишь это, всё работает! ✅');
+  showToast(ok ? '✓ Сообщение отправлено!' : '✗ Ошибка. Проверь токен и ID');
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  НАВИГАЦИЯ                                   ║
+// ╚═══════════════════════════════════════════════╝
+function goPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.bi').forEach(x=>x.classList.remove('active'));
+  document.getElementById(`page-${p}`).classList.add('active');
+  const bn = document.getElementById(`bnav-${p}`);
+  if (bn) bn.classList.add('active');
+  if (p==='cart') renderCart();
+  if (p==='orders') renderOrders();
+  if (p==='admin') renderAdmin();
+  window.scrollTo(0,0);
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  КАТАЛОГ                                     ║
+// ╚═══════════════════════════════════════════════╝
+function renderProducts(cat=activeCat) {
+  const g = document.getElementById('pgrid');
+  const list = cat==='all' ? products : products.filter(p=>p.category===cat);
+  if (!list.length) { g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="e-ic">◼</div>Товаров нет</div>'; return; }
+  g.innerHTML = list.map(p=>{
+    const sc = p.stock===0?'out':p.stock<=3?'low':'';
+    const st = p.stock===0?'Нет в наличии':p.stock<=3?`Осталось: ${p.stock}`:`В наличии: ${p.stock}`;
+    return `<div class="pcard" onclick="openProd(${p.id})">
+      <div class="pbadge ${p.hot?'hot':''}">${p.hot?'★ ХИТ':p.badge.toUpperCase()}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pdesc">${p.desc.substring(0,56)}…</div>
+      <div class="pfooter">
+        <div class="pprice"><span class="cur">₽</span>${p.price}</div>
+        <div class="padd" onclick="qAdd(event,${p.id})">+</div>
+      </div>
+      <div class="pstock ${sc}">${st}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterCat(cat,el) {
+  activeCat=cat;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts(cat);
+}
+
+function openProd(id) {
+  curProd = products.find(p=>p.id===id);
+  if (!curProd) return;
+  curQty=1;
+  set('dtag', curProd.badge.toUpperCase());
+  set('dname', curProd.name);
+  set('dprice', curProd.price);
+  set('ddesc', curProd.desc);
+  set('qn', 1);
+  document.getElementById('dfeat').innerHTML = curProd.features.map(f=>
+    `<div class="frow"><span class="fk">${f.k}</span><span class="fv">${f.v}</span></div>`).join('');
+  goPage('detail');
+}
+
+function qAdd(e,id) {
+  e.stopPropagation();
+  const p=products.find(x=>x.id===id);
+  if(!p||p.stock===0){showToast('Нет в наличии');return;}
+  addToCart(p,1); showToast(`${p.name} → корзина`);
+}
+
+function changeQty(d) {
+  curQty=Math.max(1,Math.min(curQty+d,curProd?.stock||99));
+  document.getElementById('qn').textContent=curQty;
+}
+
+function addToCartDetail() {
+  if(!curProd)return;
+  addToCart(curProd,curQty);
+  showToast('Добавлено в корзину');
+  goPage('cart');
+}
+
+function buyNow() {
+  if(!curProd)return;
+  cart=[]; addToCart(curProd,curQty); openPay();
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  КОРЗИНА                                     ║
+// ╚═══════════════════════════════════════════════╝
+function addToCart(p,qty) {
+  const ex=cart.find(x=>x.id===p.id);
+  if(ex) ex.qty+=qty; else cart.push({...p,qty});
+  updateCart();
+}
+
+function updateCart() {
+  const tot=cart.reduce((s,x)=>s+x.qty,0);
+  const cc=document.getElementById('cc');
+  cc.textContent=tot; cc.style.display=tot>0?'flex':'none';
+  document.getElementById('cic').textContent=`${tot} позиций`;
+}
+
+function renderCart() {
+  const el=document.getElementById('cartContent');
+  if(!cart.length){
+    el.innerHTML=`<div class="cempty"><div class="ce-ic">🛒</div><div class="ce-t">Корзина пуста.<br>Добавьте товары из каталога.</div></div>`;
+    return;
+  }
+  const tot=cart.reduce((s,x)=>s+x.price*x.qty,0);
+  el.innerHTML=`
+    ${cart.map((it,i)=>`
+    <div class="citem">
+      <div class="ci-inf">
+        <div class="ci-nm">${it.name}</div>
+        <div class="ci-mt">${it.badge.toUpperCase()} · ₽${it.price} × ${it.qty}</div>
+      </div>
+      <div class="ci-pr">₽${it.price*it.qty}</div>
+      <div class="ci-del" onclick="delCart(${i})">×</div>
+    </div>`).join('')}
+    <div class="csum">
+      <div class="ctrow"><span class="ctl">Итого</span><span class="ctv">₽${tot}</span></div>
+      <p class="cnote">После оплаты данные аккаунтов автоматически придут в Telegram</p>
+      <div class="popts">
+        <button class="pbtn ptg" onclick="openPay()">✈ Оплатить через Telegram</button>
+        <button class="pbtn pman" onclick="payManual()">✉ Написать в личку</button>
+      </div>
+    </div>`;
+}
+
+function delCart(i) {
+  cart.splice(i,1); updateCart(); renderCart();
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  ОПЛАТА                                      ║
+// ╚═══════════════════════════════════════════════╝
+function openPay() {
+  if(!cart.length){showToast('Корзина пуста');return;}
+  const tot=cart.reduce((s,x)=>s+x.price*x.qty,0);
+  document.getElementById('paySum').innerHTML=cart.map(it=>
+    `<div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:12px">
+      <span style="color:var(--t2)">${it.name} × ${it.qty}</span>
+      <span style="font-family:'DM Mono'">₽${it.price*it.qty}</span>
+    </div>`).join('');
+  document.getElementById('payTot').textContent=`₽${tot}`;
+  document.getElementById('mPay').classList.add('open');
+}
+
+function closePay() {
+  document.getElementById('mPay').classList.remove('open');
+}
+
+async function payTelegram() {
+  closePay();
+  const order=createOrder('paid');
+  await notifyNewOrder(order);
+  showToast('Оплата прошла успешно!');
+  goPage('orders');
+}
+
+async function payManual() {
+  closePay();
+  const order=createOrder('pending');
+  await notifyNewOrder(order);
+  const items=order.items.map(x=>`${x.name} × ${x.qty}`).join(', ');
+  const msg=`Хочу оплатить вручную:\n${items}\nИтого: ₽${order.total}\nЗаказ: #${order.id}`;
+  const bn=C.botName||'BonvieroBot';
+  window.open(`https://t.me/${bn}?text=${encodeURIComponent(msg)}`);
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  ЗАКАЗЫ                                      ║
+// ╚═══════════════════════════════════════════════╝
+function createOrder(status) {
+  const id=`BNV-${Date.now().toString(36).toUpperCase()}`;
+  const cartSnap=cart.map(x=>({...x}));
+  const order={
+    id, items:cartSnap,
+    total:cartSnap.reduce((s,x)=>s+x.price*x.qty,0),
+    status,
+    date:new Date().toLocaleString('ru'),
+    userId:tgUser?.id,
+    userName:[tgUser?.first_name,tgUser?.last_name].filter(Boolean).join(' '),
+    accountData: status==='paid' ? parseAccountData(cartSnap[0]?.id) : null
+  };
+  orders.unshift(order);
+  cart=[]; updateCart(); saveOrders();
+  return order;
+}
+
+function parseAccountData(prodId) {
+  const p=products.find(x=>x.id===prodId);
+  if(!p?.accountData)return null;
+  const obj={};
+  p.accountData.split('\n').filter(l=>l.includes(':')).forEach(line=>{
+    const i=line.indexOf(':');
+    const k=line.substring(0,i).trim(), val=line.substring(i+1).trim();
+    if(k&&val) obj[k]=val;
+  });
+  return Object.keys(obj).length?obj:null;
+}
+
+function saveOrders(){try{localStorage.setItem('bonv_orders',JSON.stringify(orders));}catch(e){}}
+function loadOrders(){try{const s=localStorage.getItem('bonv_orders');if(s)orders=JSON.parse(s);}catch(e){}}
+
+function updateProfileStats() {
+  const uo=orders.filter(o=>o.userId===tgUser?.id);
+  const pd=uo.filter(o=>o.status==='paid');
+  set('st1',uo.length);
+  document.getElementById('st2').textContent=`₽${pd.reduce((s,o)=>s+o.total,0)}`;
+  set('st3',pd.length);
+}
+
+function renderOrders() {
+  const el=document.getElementById('ordersContent');
+  const list=orders.filter(o=>o.userId===tgUser?.id);
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="e-ic">📦</div>Заказов пока нет</div>`;return;}
+  el.innerHTML=list.map(o=>{
+    const sc={paid:'s-paid',pending:'s-pending',cancelled:'s-cancelled'}[o.status]||'s-pending';
+    const st={paid:'Оплачен',pending:'Ожидает',cancelled:'Отменён'}[o.status]||o.status;
+    const accHtml=o.accountData&&o.status==='paid'?`
+      <div class="acc-box">
+        <div class="acc-hdr">Данные аккаунта</div>
+        ${Object.entries(o.accountData).map(([k,val])=>
+          `<div class="acc-row"><span class="acc-k">${k}</span><span class="acc-v">${val}</span></div>`).join('')}
+        <button class="copy-btn" onclick='copyAcc(${JSON.stringify(o.accountData)})'>Скопировать данные</button>
+      </div>`:'';
+    return `<div class="ocard">
+      <div class="ohead"><span class="oid">#${o.id}</span><span class="ost ${sc}">${st}</span></div>
+      <div class="oprod">${o.items.map(x=>`${x.name} × ${x.qty}`).join(', ')}</div>
+      <div class="ofooter"><span class="odt">${o.date}</span><span class="otot">₽${o.total}</span></div>
+      ${accHtml}
+    </div>`;
+  }).join('');
+}
+
+function copyAcc(data){
+  const t=Object.entries(data).map(([k,v])=>`${k}: ${v}`).join('\n');
+  navigator.clipboard?.writeText(t).then(()=>showToast('Скопировано!'));
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  АДМИН ПАНЕЛЬ                                ║
+// ╚═══════════════════════════════════════════════╝
+function renderAdmin() {
+  if(!isAdmin){goPage('catalog');return;}
+  const pd=orders.filter(o=>o.status==='paid');
+  set('as1',orders.length);
+  document.getElementById('as2').textContent=`₽${pd.reduce((s,o)=>s+o.total,0)}`;
+  set('as3',products.length);
+  set('as4',new Set(orders.map(o=>o.userId)).size);
+  renderAOrders('aRec',orders.slice(0,5));
+  fillAdminCfg();
+}
+
+function renderAOrders(elId,list) {
+  const el=document.getElementById(elId);
+  if(!list.length){el.innerHTML='<div class="empty" style="padding:20px 0">Нет заказов</div>';return;}
+  el.innerHTML=list.map(o=>{
+    const sc={paid:'var(--ok)',pending:'var(--warn)',cancelled:'var(--err)'}[o.status]||'var(--t2)';
+    const st={paid:'Оплачен',pending:'Ожидает',cancelled:'Отменён'}[o.status]||o.status;
+    const chips=o.status==='pending'?`
+      <div class="achips">
+        <button class="chip c-ok" onclick="approveOrder('${o.id}')">✓</button>
+        <button class="chip c-err" onclick="rejectOrder('${o.id}')">✗</button>
+      </div>`:'';
+    return `<div class="arow2">
+      <div class="ai-inf">
+        <div class="ai-usr">${o.userName||'Пользователь'} <span style="color:var(--t3);font-size:10px;font-family:'DM Mono'">#${o.id}</span></div>
+        <div class="ai-itm">${o.items.map(x=>`${x.name}×${x.qty}`).join(', ')}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="ai-pr">₽${o.total}</div>
+        <div style="font-size:10px;color:${sc};margin-top:2px">${st}</div>
+      </div>
+      ${chips}
+    </div>`;
+  }).join('');
+}
+
+function renderAProds() {
+  const el=document.getElementById('aProd');
+  el.innerHTML=products.map(p=>{
+    const sc=p.stock===0?'var(--err)':p.stock<=3?'var(--warn)':'var(--ok)';
+    const st=p.stock===0?'Нет':p.stock<=3?'Мало':'ОК';
+    return `<div class="arow2">
+      <div class="ai-inf">
+        <div class="ai-usr">${p.name}</div>
+        <div class="ai-itm">${p.badge} · ₽${p.price}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'DM Mono';font-size:12px">×${p.stock}</div>
+        <div style="font-size:10px;color:${sc};margin-top:2px">${st}</div>
+      </div>
+      <button class="chip c-err" onclick="delProd(${p.id})">✗</button>
+    </div>`;
+  }).join('');
+}
+
+async function approveOrder(id) {
+  const o=orders.find(x=>x.id===id);
+  if(!o)return;
+  o.status='paid';
+  o.accountData=parseAccountData(o.items[0]?.id);
+  saveOrders();
+  await notifyConfirmed(o);
+  renderAdmin(); renderAOrders('aAll',orders);
+  showToast('Подтверждён, уведомление отправлено');
+}
+
+async function rejectOrder(id) {
+  const o=orders.find(x=>x.id===id);
+  if(!o)return;
+  o.status='cancelled';
+  saveOrders();
+  await notifyCancelled(o);
+  renderAdmin(); renderAOrders('aAll',orders);
+  showToast('Заказ отменён');
+}
+
+function delProd(id) {
+  products=products.filter(p=>p.id!==id);
+  renderProducts(activeCat); renderAProds();
+  showToast('Товар удалён');
+}
+
+function addProduct() {
+  const nm=v('npNm'),pr=parseInt(v('npPr')),st=parseInt(v('npSt')),
+        cat=v('npCat'),ds=v('npDs'),dt=v('npDt'),hot=v('npHt')==='1';
+  if(!nm||!pr||!st||!ds){showToast('Заполни все поля');return;}
+  products.push({
+    id:Date.now(),name:nm,category:cat,price:pr,stock:st,desc:ds,
+    features:[{k:'Тип',v:cat},{k:'Цена',v:`₽${pr}`},{k:'Остаток',v:`${st} шт`}],
+    badge:cat,hot,
+    accountData:dt||'login: user\npassword: pass'
+  });
+  ['npNm','npPr','npSt','npDs','npDt'].forEach(id=>set(id,''));
+  showToast('Товар добавлен!');
+  renderProducts(activeCat);
+  aTab('pr', null);
+}
+
+function aTab(tab, el) {
+  document.querySelectorAll('.atab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else {
+    const map={ov:0,or:1,pr:2,add:3,cfg:4};
+    if(map[tab]!==undefined) document.querySelectorAll('.atab')[map[tab]]?.classList.add('active');
+  }
+  ['ov','or','pr','add','cfg'].forEach(t=>{
+    document.getElementById(`t-${t}`).style.display=t===tab?'block':'none';
+  });
+  if(tab==='or') renderAOrders('aAll',orders);
+  if(tab==='pr') renderAProds();
+  if(tab==='cfg') fillAdminCfg();
+}
+
+// ╔═══════════════════════════════════════════════╗
+// ║  УТИЛИТЫ                                     ║
+// ╚═══════════════════════════════════════════════╝
+function contactSupport(){window.open(`https://t.me/${C.botName||'BonvieroBot'}`);}
+function v(id){return document.getElementById(id)?.value?.trim()||'';}
+function set(id,val){const el=document.getElementById(id);if(el){if('value'in el)el.value=val;else el.textContent=val;}}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+</script>
+</body>
+</html>
