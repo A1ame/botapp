@@ -827,9 +827,16 @@ async function renderAProds() {
   try {
     products = await api('GET', '/api/products');
   } catch(e) {}
-  if (!products.length) { el.innerHTML = '<div class="empty">Нет товаров</div>'; return; }
   
-  el.innerHTML = products.map(p => {
+  // Статичная кнопка добавления, которая будет отображаться всегда
+  const addBtnHtml = `<button class="btn-p" style="width:100%; margin-bottom: 20px;" onclick="aTab('add')">+ Добавить новый товар</button>`;
+
+  if (!products.length) { 
+    el.innerHTML = addBtnHtml + '<div class="empty">Нет товаров</div>'; 
+    return; 
+  }
+  
+  el.innerHTML = addBtnHtml + products.map(p => {
     const sc = p.stock === 0 ? 'var(--err)' : p.stock <= 3 ? 'var(--warn)' : 'var(--ok)';
     const st = p.stock === 0 ? 'Нет' : p.stock <= 3 ? 'Мало' : 'ОК';
     return `<div class="arow2">
