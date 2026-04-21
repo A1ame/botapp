@@ -822,39 +822,74 @@ function renderAOrders(elId, list) {
   }).join('');
 }
 
+// 1. Исправленная функция отрисовки товаров
 async function renderAProds() {
   const el = document.getElementById('aProd');
-  try {
-    products = await api('GET', '/api/products');
-  } catch(e) {}
-  
-  // Статичная кнопка добавления, которая будет отображаться всегда
-  const addBtnHtml = `<button class="btn-p" style="width:100%; margin-bottom: 20px;" onclick="aTab('add')">+ Добавить новый товар</button>`;
+  if (!el) return;
 
-  if (!products.length) { 
-    el.innerHTML = addBtnHtml + '<div class="empty">Нет товаров</div>'; 
-    return; 
+  try {
+    const res = await api('GET', '/api/products');
+    products = res || [];
+  } catch(e) {
+    console.error("Ошибка загрузки:", e);
+    products = [];
+  }
+
+  // Кнопка добавления, которая видна ВСЕГДА
+  let html = `<button class="btn-p" style="width:100%; margin-bottom:20px; height:50px; font-weight:800;" onclick="aTab('add')">+ ДОБАВИТЬ НОВЫЙ ТОВАР</button>`;
+
+  if (products.length === 0) {
+    html += '<div class="empty">На складе пока пусто</div>';
+  } else {
+    html += products.map(p => `
+      <div class="arow2">
+        <div class="ai-inf">
+          <div class="ai-usr">${p.name}</div>
+          <div class="ai-itm">${p.badge || 'item'} · ₽${p.price}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'DM Mono';font-size:14px;font-weight:600">×${p.stock}</div>
+          <div style="font-size:10px; color:${p.stock > 0 ? 'var(--ok)' : 'var(--err)'}">${p.stock > 0 ? 'В наличии' : 'Нет'}</div>
+        </div>
+        <div class="achips" style="margin-left:12px">
+          <button class="chip c-ok" style="padding:8px" onclick="openEdit('${p._id}')">✏️</button>
+          <button class="chip c-err" style="padding:8px" onclick="delProd('${p._id}')">✕</button>
+        </div>
+      </div>
+    `).join('');
   }
   
-  el.innerHTML = addBtnHtml + products.map(p => {
-    const sc = p.stock === 0 ? 'var(--err)' : p.stock <= 3 ? 'var(--warn)' : 'var(--ok)';
-    const st = p.stock === 0 ? 'Нет' : p.stock <= 3 ? 'Мало' : 'ОК';
-    return `<div class="arow2">
-      <div class="ai-inf">
-        <div class="ai-usr">${p.name}</div>
-        <div class="ai-itm">${p.badge} · ₽${p.price}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-family:'DM Mono';font-size:12px">×${p.stock}</div>
-        <div style="font-size:10px;color:${sc};margin-top:2px">${st}</div>
-      </div>
-      <div class="achips" style="margin-left:10px">
-        <button class="chip c-ok" style="padding:4px 6px" onclick="openEdit('${p._id}')">✏️</button>
-        <button class="chip c-err" style="padding:4px 6px" onclick="delProd('${p._id}')">✗</button>
-      </div>
-    </div>`;
-  }).join('');
+  el.innerHTML = html;
 }
+
+// 2. Исправленная функция переключения вкладок
+function aTab(tab, el) {
+  // Убираем активный класс у всех кнопок в меню админки
+  document.querySelectorAll('.atabs .atab').forEach(t => t.classList.remove('active'));
+  
+  // Если нажали на кнопку, подсвечиваем её
+  if (el) {
+    el.classList.add('active');
+  } else {
+    // Если перешли программно (например, через кнопку "Добавить"), ищем нужную кнопку в меню
+    const idxMap = { ov: 0, or: 1, pr: 2, add: 3 };
+    const buttons = document.querySelectorAll('.atabs .atab');
+    if (buttons[idxMap[tab]]) buttons[idxMap[tab]].classList.add('active');
+  }
+
+  // Скрываем все секции и показываем нужную
+  ['ov', 'or', 'pr', 'add'].forEach(t => {
+    const section = document.getElementById(`t-${t}`);
+    if (section) section.style.display = (t === tab) ? 'block' : 'none';
+  });
+
+  // Загружаем данные в зависимости от вкладки
+  if (tab === 'or') api('GET', '/api/orders').then(list => renderAOrders('aAll', list)).catch(e => console.error(e));
+  if (tab === 'pr') renderAProds();
+}
+
+
+
 
 async function approveOrder(id) {
   try {
@@ -959,21 +994,6 @@ async function addProduct() {
   }
 }
 
-function aTab(tab, el) {
-  document.querySelectorAll('.atab').forEach(t => t.classList.remove('active'));
-  if (el) el.classList.add('active');
-  else {
-    const map = { ov: 0, or: 1, pr: 2, add: 3 };
-    if (map[tab] !== undefined) document.querySelectorAll('.atab')[map[tab]]?.classList.add('active');
-  }
-  ['ov', 'or', 'pr', 'add'].forEach(t => {
-    document.getElementById(`t-${t}`).style.display = t === tab ? 'block' : 'none';
-  });
-  if (tab === 'or') {
-    api('GET', '/api/orders').then(list => renderAOrders('aAll', list)).catch(() => {});
-  }
-  if (tab === 'pr') renderAProds();
-}
 
 // ╔═══════════════════════════════════════════════╗
 // ║  УТИЛИТЫ                                     ║
